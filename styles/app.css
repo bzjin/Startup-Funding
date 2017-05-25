@@ -1,0 +1,91 @@
+* {
+  transform-origin: inherit ;
+}
+
+body {
+  background: white;
+  font-family: "Open Sans";
+  color: black;
+}
+
+div {
+  position: relative;
+}
+
+h1, h2, h3, h4, p { 
+  font-family: "Open Sans";
+}
+
+h1 {
+  font-size: 28px;
+}
+
+h2 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+h3 {
+  font-size: 14px;
+  font-weight: 700;
+  font-style: italic;
+}
+
+h4 {
+  font-size: 14px;
+  font-weight: 700;
+  font-style: italic;
+}
+
+p { 
+  font-size: 16px;
+  font-weight: 300;
+  font-family: "Open Sans";
+}
+
+.progress-bar{
+  background-color: grey;
+}
+
+.progress {
+  margin: 0 auto;
+  height: 5px;
+  background-color: lightgrey;
+  box-shadow: 0px;
+  -webkit-box-shadow: 0px;
+}
+
+button {
+  background-color: black;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  margin: 2px 5px;
+}
+
+#occupations { 
+  max-height: 700px;
+  overflow-y: scroll;
+}
+
+.axis g.tick line { 
+  opacity: .1;
+}
+
+.d3-tip {
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  font-weight: 100;
+  font-size: 12px;
+  border-radius: 2px;
+  z-index: 999;
+}
+
+.orange {
+  color: orange;
+}
+
+.blue {
+  color: steelblue;
+}
