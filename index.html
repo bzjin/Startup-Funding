@@ -4,10 +4,11 @@
 
 <head lang="en">
 	<meta charset="utf-8">
-	<title>Startup Funding/title>
+	<title>Startup Funding</title>
 
 	<!-- D3 Library --> <script src="lib/d3.v4.min.js"></script>
     <!-- D3-Tip --> <script src="lib/d3-tip.js"></script>
+    <!-- TopoJson --> <script src="lib/topojson.min.js"></script>
 	<!-- Google Fonts --> <link href="styles/google-fonts.css" rel="stylesheet"> 
 	<!-- Jquery -->   <script src="lib/jquery-1.12.4.min.js"></script>
   	<script src="lib/jquery-1.12.1-ui.js"></script>
@@ -18,18 +19,18 @@
 
 <body>
 	<div class="col-md-10 col-md-offset-1">
-		<h1>How are Startups Being Funded? ? </h1>
+		<h1>How are Startups Being Funded?</h1>
 
 		<div class="col-md-12">
 		<p> Heatmap of geography of United states and avg funding per startup </p>
+		<div id = "map"></div>
+		<p> Zoom in one to three notable states and breakdown (by zip code?) </p>
 		</div>
-
-		<div class="col-md-12" id="xyoccupations"></div>
 
 		<div class="col-md-12">
+		<p> Breakdown of industries </p>
+		<p> Choose 2-5 larger industries to further break down </p>
 		</div>
-		<div class="col-md-12" id="occupations"></div>
-
 	</div>
 </body>
 
