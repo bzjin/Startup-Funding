@@ -1,11 +1,16 @@
 var f = d3.format(",");
-var projection = d3.geoAlbersUsa().scale(1000).translate([600,240]);
+var projection = d3.geoAlbersUsa().scale(1000).translate([600,260]);
 var pathGenerator = d3.geoPath().projection(projection);
 var w = $("#map").width(); 
 
 var svg = d3.select("#map").append("svg")
     .attr("width", w)
     .attr("height", 500);
+
+
+var svgs = d3.select("#states").append("svg")
+    .attr("width", w)
+    .attr("height", 200);
 
 var svg1 = d3.select("#industries").append("svg")
     .attr("width", w)
@@ -53,6 +58,8 @@ d3.queue()
                     d.raised = j.RAISED;
                     d.min_invest = j.MIN_INVESTMENT;
                     d.for_sale = j.FOR_SALE;
+                    d.area = j.AREA;
+                    d.abbrev = j.ABBREV;
                 }
               })
         })
@@ -71,17 +78,32 @@ d3.queue()
 
 
 function showMap() {
-    for (i = 0; i<9; i++){
+    statedata.sort(function(a, b){
+        var nameA = a.RAISED/a.POPULATION;
+        var nameB = b.RAISED/b.POPULATION;
+        if (nameA < nameB) { return 1; }
+        if (nameA > nameB) { return -1; }
+        return 0; 
+    })
+
+    svg.append("text")
+        .attr("x", 10)
+        .attr("y", 140)
+        .style("fill", "white")
+        .style("font-size", 12)
+        .text("Dollars Raised per Person")
+
+    for (i=0; i<9; i++){
         svg.append("rect")
             .attr("x", 10)
-            .attr("y", 70 + ((i+2)*20))
+            .attr("y", 130 + ((i+2)*20))
             .attr("width", 20)
             .attr("height", 20)
             .attr("fill", color(i*120))
 
         svg.append("text")
             .attr("x", 35)
-            .attr("y", 85 + ((i+2)*20))
+            .attr("y", 145 + ((i+2)*20))
             .style("fill", "white")
             .style("font-size", 12)
             .text(function(){
@@ -102,10 +124,12 @@ function showMap() {
 
 
     var state_names = [];
+    var findmax = [];
     statedata.forEach(function(d){
         if (state_names.indexOf(d.key) == -1){
             state_names.push(d.STNAME);
         }
+        findmax.push(d.RAISED/d.POPULATION);
     })
 
     pathGenerator = d3.geoPath().projection(projection);
@@ -116,6 +140,7 @@ function showMap() {
     paths.enter()
     	.append("path")
     	.attr("class", "state")
+        .attr("id", function(d) { return d.properties.name})
     	.attr("d", function (state) {
 	        return pathGenerator(state);
 	    })
@@ -125,7 +150,72 @@ function showMap() {
         .style("opacity", 1)
         .on("mouseenter", function(d){
             tip.show(d);
+            d3.selectAll("#" + d3.select(this).attr("id"))
+                .style("stroke", "#76EE00")
+                .style("stroke-width", 2)
         })
+        .on("mouseleave", function(d){
+            tip.hide(d);
+            d3.selectAll("#" + d3.select(this).attr("id"))
+                .style("stroke", "none")
+                .style("stroke-width", 0)
+        })
+        //.attr("transform", function(d){
+          //  return "scale("+d.raised*20/(d.population*d.area)+")"
+        //})
+
+    
+
+    var xScale = d3.scalePoint()
+                .domain(state_names)
+                .range([50, w - 50])
+
+    var yScale = d3.scaleLinear()
+                .domain([0, d3.max(findmax)])
+                .range([180, 10])
+
+    var yScaleH = d3.scaleLinear()
+                .domain([0, d3.max(findmax)])
+                .range([0, 170])
+
+    var xAxis = d3.axisBottom(xScale).tickSize(0,0,0)
+    var yAxis = d3.axisLeft(yScale);
+
+    svgs.selectAll(".states")
+        .data(states.features)
+        .enter()
+        .append("rect")
+            .attr("id", function(d) { return d.properties.name})
+            .attr("x", function(d){ return xScale(d.properties.name)})
+            .attr("y", function(d) { return yScale(d.raised/d.population)})
+            .attr("width", 10)
+            .attr("height", function(d) { return yScaleH(d.raised/d.population)})
+            .style("fill", function(d){
+            return color(d.raised/d.population)
+        })
+            .on("mouseenter", function(d){
+            tip.show(d);
+            d3.selectAll("#" + d3.select(this).attr("id"))
+                .style("stroke", "#76EE00")
+                .style("stroke-width", 2)
+        })
+        .on("mouseleave", function(d){
+            tip.hide(d);
+            d3.selectAll("#" + d3.select(this).attr("id"))
+                .style("stroke", "none")
+                .style("stroke-width", 0)
+        })
+
+    svgs.selectAll(".abbrev")
+        .data(states.features)
+        .enter()
+        .append("text")
+            .attr("x", function(d){ return xScale(d.properties.name) + 5})
+            .attr("y", 192)
+            .style("text-anchor", "middle")
+            .style("font-size", 10)
+            .style("fill", "white")
+            .text(function(d) {return d.abbrev})
 }
 
 function showBars() {
@@ -135,7 +225,7 @@ function showBars() {
             industries.push(d.key);
         }
     })
-    console.log(industries, by_industry)
+    //console.log(industries, by_industry)
     var xScale = d3.scalePoint()
                 .domain(industries)
                 .range([50, w - 50])
