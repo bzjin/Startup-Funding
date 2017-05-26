@@ -119,7 +119,7 @@ function showMap() {
     .attr('class', 'd3-tip')
     .offset([0, 10])
     .html(function(d) {
-      return "<h4 style='color:#76EE00'>" + d.properties.name +"</h4><p>Money Raised: $" + f(d.raised) + "<br> Minimum Investment: $" + f(d.min_invest) + "<br> For Sale: $" + f(d.for_sale) + "</p>";
+      return "<h4 style='color:#76EE00'>" + d.properties.name +"</h4><p>Money Raised: $" + f(d.raised) + "<br> Minimum Investment: $" + f(d.min_invest) + "<br> For Sale: $" + f(d.for_sale) + "<br>Money Raised per Person: $" + parseInt(d.raised/d.population) + "</p>";
     })
 
 
@@ -225,14 +225,28 @@ function showBars() {
             industries.push(d.key);
         }
     })
-    //console.log(industries, by_industry)
+    console.log(industries, by_industry)
     var xScale = d3.scalePoint()
                 .domain(industries)
                 .range([50, w - 50])
 
     var yScale = d3.scaleLinear()
-                .domain([])
-                .range([])
+                .domain([0, 500000000])
+                .range([450, 50])
+
+    var yScaleH = d3.scaleLinear()
+                .domain([0, 500000000])
+                .range([0, 400])
+
+    svg1.selectAll(".industry")
+        .data(by_industry)
+        .enter()
+            .append("rect")
+            .attr("x", function(d){ return xScale(d.key)})
+            .attr("y", function(d){ return yScale(d.value.min_investment)})
+            .attr("width", 20)
+            .attr("height", function(d){ return yScaleH(d.value.min_investment)})
+            .style("fill", "orange")
 }
 
 
