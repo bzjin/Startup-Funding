@@ -220,23 +220,42 @@ function showMap() {
 
 function showBars() {
     var industries = [];
+    by_industry.sort(function(a, b){
+        var nameA = a.value.min_investment;
+        var nameB = b.value.min_investment;
+        if (nameA < nameB) { return 1; }
+        if (nameA > nameB) { return -1; }
+        return 0; 
+    })
+
     by_industry.forEach(function(d){
         if (industries.indexOf(d.key) == -1){
             industries.push(d.key);
         }
     })
-    console.log(industries, by_industry)
+
     var xScale = d3.scalePoint()
                 .domain(industries)
                 .range([50, w - 50])
 
     var yScale = d3.scaleLinear()
                 .domain([0, 500000000])
-                .range([450, 50])
+                .range([400, 50])
 
     var yScaleH = d3.scaleLinear()
                 .domain([0, 500000000])
-                .range([0, 400])
+                .range([0, 350])
+
+    var xAxis = d3.axisBottom(xScale).tickSize(0,0,0)
+    
+    svg1.append("g").attr("class", "axis")
+        .attr("transform", "translate(0, 400)")
+        .call(xAxis)
+        .selectAll("text")
+            .style("text-anchor", "end")
+            .style("fill", "white")
+            .style("font-size", "12px")
+            .attr("transform", "rotate(-35)");
 
     svg1.selectAll(".industry")
         .data(by_industry)
