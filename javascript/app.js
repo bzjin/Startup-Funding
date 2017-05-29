@@ -11,11 +11,6 @@ var svgs = d3.select("#states").append("svg")
     .attr("width", w)
     .attr("height", 200);
 
-var svg1 = d3.select("#industries").append("svg")
-    .attr("id", "circles")
-    .attr("width", w-400)
-    .attr("height", w-400);
-
 var color = d3.scaleQuantize()
             .domain([0, 1000])
             .range(["#d9f0a3","#addd8e","#78c679","#41ab5d","#238443","#006837","#004529"])
@@ -35,23 +30,6 @@ d3.queue()
         by_industry = d3.nest()
         .key(function(d) { return d.industry})
         .entries(data);
-
-        /*by_industry.forEach(function(d){
-            var thisindustry = {"name": d.key, "children":[]};
-            //flare.children.push({"name": d.key, "children":[]})
-            var agg = d3.nest()
-            .key(function(d) { return d.state_description})
-            .rollup(function(leaves) { return {"money_raised": d3.sum(leaves, function(d) {return parseFloat(d.money_raised);})}})
-            .entries(d.values)
-
-            agg.forEach(function(j){
-                thisindustry.children.push({"name": j.key, "size": j.value.money_raised});
-            })
-            flare.children.push(thisindustry)
-            console.log(JSON.stringify(flare))
-        })
-
-        console.log(JSON.stringify(flare))*/
 
         by_state_total = d3.nest()
         .key(function(d) { return d.state})
@@ -174,11 +152,6 @@ function showMap() {
                 .style("stroke", "none")
                 .style("stroke-width", 0)
         })
-        //.attr("transform", function(d){
-          //  return "scale("+d.raised*20/(d.population*d.area)+")"
-        //})
-
-    
 
     var xScale = d3.scalePoint()
                 .domain(state_names)
@@ -233,192 +206,137 @@ function showMap() {
 }
 
 function showBars() {
+    by_industry.forEach(function(industry){
+        var thisindustry = d3.select("#industries").append("svg")
+            .attr('width', w/2)
+            .attr('height', 300)
+            .attr("class", "floatme")
+            .style("overflow", "visible")
 
-var svgc = d3.select("#circles"),
-    margin = 20,
-    diameter = +svgc.attr("width"),
-    g = svgc.append("g").attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
+         var tip = d3.tip()
+            .attr('class', 'd3-tip')
+            .offset([0, 10])
+            .html(function(d) {
+              return d.value;
+            })
 
- var tip = d3.tip()
-    .attr('class', 'd3-tip')
-    .offset([0, 10])
-    .html(function(d) {
-      return d.value;
-    })
+        thisindustry.call(tip);
 
-svgc.call(tip);
- 
-var color = d3.scaleLinear()
-    .domain([-1, 5])
-    .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"])
-    .interpolate(d3.interpolateHcl);
+        thisindustry.append("text")
+            .attr("x", 10)
+            .attr("y", 20)
+            .text(industry.key)
+            .style("font-weight", 700)
+            .style("fill", "green")
 
-var pack = d3.pack()
-    .size([diameter - margin, diameter - margin])
-    .padding(2);
-
-d3.json("data/flare.json", function(error, root) {
-  if (error) throw error;
-    
-  root = d3.hierarchy(root)
-      .sum(function(d) { return d.size; })
-      .sort(function(a, b) { return b.value - a.value; });
-
-  var focus = root,
-      nodes = pack(root).descendants(),
-      view;
-
-  var circle = g.selectAll("circle")
-    .data(nodes)
-    .enter().append("circle")
-      .attr("class", function(d) { return d.parent ? d.children ? "node" : "node node--leaf" : "node node--root"; })
-      .style("fill", function(d) { return d.children ? color(d.depth) : null; })
-      .on("click", function(d) { zoom(d), d3.event.stopPropagation(); })
-      .on("mouseenter", function(d){
-        tip.show(d);
-      })
-
-  var text = g.selectAll("text")
-    .data(nodes)
-    .enter().append("text")
-      .attr("class", function(d) { return "label depth" + d.depth + " value" + d.value})
-      .style("fill-opacity", function(d) { return d.depth === 2 ? 1 : 0; })
-      //.style("display", function(d) { return d.depth === 2 ? "inline" : "none"; })
-      .text(function(d) { 
-        if (d.value > 50000000){
-            return d.data.name.toLowerCase(); 
-         } else {
-            return null; 
-         }
+        var findmax = [];
+        industry.values.forEach(function(d){
+            findmax.push(+d.money_raised)
         })
 
+        var xScale = d3.scaleLinear()
+                    .domain([new Date(2015, 5, 1), new Date()])
+                    .range([40, w/2 - 10])
 
-  var node = g.selectAll("circle,text");
+        var yScale = d3.scaleLinear()
+                    .domain([0, d3.max(findmax)])
+                    .range([280, 30])
 
-  //svgc.on("click", function(d) { zoom(d); });
-  zoomTo([root.x, root.y, root.r * 2 + margin]);
+        var rScale = d3.scaleLinear()
+                    .domain([0, d3.max(findmax)])
+                    .range([1, 3])
 
-  function zoom(d) {
-    var focus0 = focus; 
-    focus = d;
-    var level = d.depth + 1; 
+        var valueline = d3.area()
+           // .curve(d3.curveBasis)
+            .x(function(d) { return xScale(new Date(d.created_at)); })
+            .y1(function(d) { return yScale(d.money_raised); })
+            .y0(function(d) { return yScale(0); });
 
-    var transition = d3.transition()
-        .duration(d3.event.altKey ? 7500 : 750)
-        .tween("zoom", function(d) {
-          var i = d3.interpolateZoom(view, [focus.x, focus.y, focus.r * 2 + margin]);
-          return function(t) { zoomTo(i(t)); };
-        });
+        var makek = d3.format(".1s");
+        var month = d3.timeFormat("%b %Y")
+        var xAxis = d3.axisBottom(xScale).tickValues([0, d3.max(findmax)]).tickFormat(function(e){ return month(e)});
+        var yAxis = d3.axisLeft(yScale).ticks(3).tickFormat(function(e){ return makek(e)});
 
-    d3.selectAll("text")
-      .style("fill-opacity", 0)
+        thisindustry.append('g').attr('class', 'axis')
+            .attr('transform', 'translate(0, 280)')
+            .call(xAxis)
+                .selectAll('text')
+                .style("font-size", 10)
+                .style("fill", "black")
 
-    d3.selectAll(".depth" + level)
-      .style("fill-opacity", 1)
+        thisindustry.append('g').attr('class', 'axis')
+            .attr('transform', 'translate(40, 0)')
+            .call(yAxis);
 
-    /*transition.selectAll("text")
-      .filter(function(d) {
-          if(!(d === undefined))
-          {
-            return d.parent === focus || this.style.display === "inline";
-          }
-        })
-        .style("fill-opacity", function(d) {
-          if(!(d === undefined))
-          {
-            return d.parent === focus ? 1 : 0;
-          }
-         })
-        .each("start", function(d) {
-          if(!(d === undefined))
-          {
-            if (d.parent === focus) this.style.display = "inline";
-          }
-        })
-        .each("end", function(d) {
-          if(!(d === undefined))
-          {
-            if (d.parent !== focus) this.style.display = "none";
-          }
-        });*/
-  }
+        thisindustry.append("path")
+            .datum(industry.values)
+            .style("fill", "green")
+            .style("stroke", "green")
+            .style("opacity", .5)
+            .style("stroke-width", 3)
+            .attr("d", valueline)
 
-  function zoomTo(v) {
-    var k = diameter / v[2]; view = v;
-    node.attr("transform", function(d) { return "translate(" + (d.x - v[0]) * k + "," + (d.y - v[1]) * k + ")"; });
-    circle.attr("r", function(d) { return d.r * k; });
-  }
-});
-/*
-    var industries = [];
-    by_industry.sort(function(a, b){
-        var nameA = a.value.min_investment;
-        var nameB = b.value.min_investment;
-        if (nameA < nameB) { return 1; }
-        if (nameA > nameB) { return -1; }
-        return 0; 
+        thisindustry.selectAll(".industry")
+            .data(industry.values)
+            .enter()
+                .append("circle")
+                .attr("cx", function(d){ 
+                    return xScale(new Date(d.created_at))})
+                .attr("cy", function(d){ return yScale(d.money_raised)})
+                .attr("r", function(d){ return rScale(d.money_raised)})
+                .attr("fill", "white")
+                .attr("stroke", "green")
+                .attr("stroke-width", 1)
+
+        thisindustry.selectAll(".industrynames")
+            .data(industry.values)
+            .enter()
+                .append("text")
+                .attr("x", function(d){ 
+                    return xScale(new Date(d.created_at)) + 7})
+                .attr("y", function(d){ return yScale(d.money_raised) + 5})
+                .text( function(d){ 
+                    if (rScale(d.money_raised) > 2.5) {
+                        return d.name;
+                    }})
+                .style("fill", "black")
+                .style("font-size", 8)
+                .call(wrapt, 90)
+
     })
 
-    by_industry.forEach(function(d){
-        if (industries.indexOf(d.key) == -1){
-            industries.push(d.key);
-        }
-    })
-     console.log(by_industry)
-   /*var xScale = d3.scalePoint()
-                .domain(industries)
-                .range([50, w - 50])
-
-    var yScale = d3.scaleLinear()
-                .domain([0, 70000000000])
-                .range([400, 50])
-
-    var yScaleH = d3.scaleLinear()
-                .domain([0, 70000000000])
-                .range([0, 350])
-
-    var xAxis = d3.axisBottom(xScale).tickSize(0,0,0)
-    
-    svg1.append("g").attr("class", "axis")
-        .attr("transform", "translate(0, 400)")
-        .call(xAxis)
-        .selectAll("text")
-            .style("text-anchor", "end")
-            .style("fill", "white")
-            .style("font-size", "12px")
-            .attr("transform", "rotate(-35)");
-
-    var pinks = ["#fff7f3","#fde0dd","#fcc5c0","#fa9fb5","#f768a1","#dd3497","#ae017e","#7a0177","#49006a"];
-    
-    svg1.selectAll(".industry")
-        .data(by_industry)
-        .enter()
-            .append("rect")
-            .attr("x", function(d){ return xScale(d.key)})
-            .attr("y", function(d){ return yScale(d.value.money_raised)})
-            .attr("width", 7)
-            .attr("height", function(d){ return yScaleH(d.value.money_raised)})
-            .style("fill", pinks[7])
-
-    svg1.selectAll(".industry1")
-        .data(by_industry)
-        .enter()
-            .append("rect")
-            .attr("x", function(d){ return xScale(d.key)+7})
-            .attr("y", function(d){ return yScale(d.value.min_investment)})
-            .attr("width", 7)
-            .attr("height", function(d){ return yScaleH(d.value.min_investment)})
-            .style("fill", pinks[4])
-
-    svg1.selectAll(".industry2")
-        .data(by_industry)
-        .enter()
-            .append("rect")
-            .attr("x", function(d){ return xScale(d.key)+14})
-            .attr("y", function(d){ return yScale(d.value.offered_for_sale)})
-            .attr("width", 7)
-            .attr("height", function(d){ return yScaleH(d.value.offered_for_sale)})
-            .style("fill", pinks[1])*/
 }
 
+function wrapt(text, width) {
+    text.each(function () {
+        var text = d3.select(this),
+            words = text.text().split(/\s+/).reverse(),
+            word,
+            line = [],
+            lineNumber = 0,
+            lineHeight = 1.1, // ems
+            x = text.attr("x"),
+            y = text.attr("y"),
+            dy = 0, //parseFloat(text.attr("dy")),
+            tspan = text.text(null)
+                        .append("tspan")
+                        .attr("x", x)
+                        .attr("y", y)
+                        .attr("dy", dy + "em");
+        while (word = words.pop()) {
+            line.push(word);
+            tspan.text(line.join(" "));
+            if (tspan.node().getComputedTextLength() > width) {
+                line.pop();
+                tspan.text(line.join(" "));
+                line = [word];
+                tspan = text.append("tspan")
+                            .attr("x", x)
+                            .attr("y", y)
+                            .attr("dy", ++lineNumber * lineHeight + dy + "em")
+                            .text(word);
+            }
+        }
+    });
+}
 
