@@ -234,6 +234,10 @@ function showBars() {
             findmax.push(+d.money_raised)
         })
 
+        var redgreen = d3.scaleQuantize()
+                .domain([0, 7000000000])
+                .range(["#a50026","#d73027","#f46d43","#fdae61","#a6d96a","#66bd63","#1a9850","#006837"]);
+    
         var xScale = d3.scaleLinear()
                     .domain([new Date(2015, 5, 1), new Date()])
                     .range([40, w/2 - 10])
@@ -254,7 +258,7 @@ function showBars() {
 
         var makek = d3.format(".1s");
         var month = d3.timeFormat("%b %Y")
-        var xAxis = d3.axisBottom(xScale).tickValues([0, d3.max(findmax)]).tickFormat(function(e){ return month(e)});
+        var xAxis = d3.axisBottom(xScale).tickValues([new Date('June 2015'), new Date('April 2017')]).tickFormat(function(e){ return month(e)});
         var yAxis = d3.axisLeft(yScale).ticks(3).tickFormat(function(e){ return makek(e)});
 
         thisindustry.append('g').attr('class', 'axis')
@@ -270,8 +274,8 @@ function showBars() {
 
         thisindustry.append("path")
             .datum(industry.values)
-            .style("fill", "green")
-            .style("stroke", "green")
+            .style("fill", redgreen(d3.max(findmax)))
+            .style("stroke", redgreen(d3.max(findmax)))
             .style("opacity", .5)
             .style("stroke-width", 3)
             .attr("d", valueline)
@@ -285,7 +289,7 @@ function showBars() {
                 .attr("cy", function(d){ return yScale(d.money_raised)})
                 .attr("r", function(d){ return rScale(d.money_raised)})
                 .attr("fill", "white")
-                .attr("stroke", "green")
+                .attr("stroke", function(d){ return redgreen(d3.max(findmax))})
                 .attr("stroke-width", 1)
 
         thisindustry.selectAll(".industrynames")
