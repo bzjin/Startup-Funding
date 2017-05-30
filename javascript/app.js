@@ -31,6 +31,22 @@ d3.queue()
         .key(function(d) { return d.industry})
         .entries(data);
 
+        by_industry.sort(function(a, b){
+            var a1 = a.key;
+            var b1 = b.key;
+            if (a.key > b.key) { return 1}
+            else if (a.key < b.key) { return -1}
+            else {return 0}
+        })
+
+        by_industry.forEach(function(d){
+            var button = document.createElement("button");
+                button.innerHTML = d.key;
+                button.setAttribute('id', "b" + (by_industry.indexOf(d) + 1)); 
+                button.setAttribute('class', "button"); 
+                document.getElementById('buttons').appendChild(button);
+        })
+
         by_state_total = d3.nest()
         .key(function(d) { return d.state})
         .rollup(function(leaves) { return {"money_raised": d3.sum(leaves, function(d) {return parseFloat(d.money_raised);}),
@@ -65,7 +81,12 @@ d3.queue()
         })
 
         showMap();
-        showBars();
+        showBars("Agriculture");
+
+        d3.selectAll(".button").on("click", function(){
+            d3.selectAll(".floatme").remove();
+            showBars(this.innerText)
+        })
 })
 
 
@@ -205,11 +226,12 @@ function showMap() {
             .text(function(d) {return d.abbrev})
 }
 
-function showBars() {
+function showBars(thisname) {
     by_industry.forEach(function(industry){
+    if (industry.key == thisname) {
         var thisindustry = d3.select("#industries").append("svg")
-            .attr('width', w/2)
-            .attr('height', 300)
+            .attr('width', w)
+            .attr('height', 350)
             .attr("class", "floatme")
             .style("overflow", "visible")
 
@@ -232,6 +254,13 @@ function showBars() {
             .style("font-weight", 700)
             .style("fill", "green")
 
+        thisindustry.append("text")
+            .attr("x", -180)
+            .attr("y", 0)
+            .text("Money Raised")
+            .style("font-weight", 700)
+            .attr("transform", "rotate(-90)")
+
         var findmax = [];
         industry.values.forEach(function(d){
             findmax.push(+d.money_raised)
@@ -243,7 +272,7 @@ function showBars() {
     
         var xScale = d3.scaleLinear()
                     .domain([new Date(2015, 5, 1), new Date()])
-                    .range([40, w/2 - 10])
+                    .range([40, w - 40])
 
         var yScale = d3.scaleLinear()
                     .domain([0, d3.max(findmax)])
@@ -317,9 +346,9 @@ function showBars() {
                         return d.name;
                     }})
                 .style("fill", "black")
-                .style("font-size", 8)
+                .style("font-size", 10)
                 .call(wrapt, 90)
-
+    }
     })
 
 }
