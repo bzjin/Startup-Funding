@@ -296,7 +296,7 @@ function showBars(thisname) {
 
         var makek = d3.format(".1s");
         var month = d3.timeFormat("%b %Y")
-        var xAxis = d3.axisBottom(xScale).tickValues([new Date('June 2015'), new Date('April 2017')]).tickFormat(function(e){ return month(e)});
+        var xAxis = d3.axisBottom(xScale).tickValues([new Date('June 2015'), new Date('March 2017')]).tickFormat(function(e){ return month(e)});
         var yAxis = d3.axisLeft(yScale).ticks(3).tickFormat(function(e){ return makek(e)});
 
         thisindustry.append('g').attr('class', 'axis')
@@ -369,10 +369,8 @@ function showAgg(){
         .attr('class', 'd3-tip')
         .offset([0, 10])
         .html(function(d) {
-            if (!isNaN(d.offered_for_sale)) {
-                d.offered_for_sale = "$" + f(d.offered_for_sale);
-            }
-          return "<b>" + d.name + "</b><br>Money Raised: $" + f(d.money_raised) + "<br>Minimum Investment: $" + f(d.min_investment) + "<br>For Sale: " + d.offered_for_sale;
+          var thismo = d3.timeFormat("%b %Y")
+          return thismo(new Date(d.key));
         })
 
     thisagg.call(tip);
@@ -409,7 +407,7 @@ function showAgg(){
 
     var makek = d3.format(".1s");
     var month = d3.timeFormat("%b %Y")
-    var xAxis = d3.axisBottom(xScale).tickValues([new Date('June 2015'), new Date('April 2017')]).tickFormat(function(e){ return month(e)});
+    var xAxis = d3.axisBottom(xScale).tickValues([new Date('June 2015'), new Date('March 2017')]).tickFormat(function(e){ return month(e)});
     var yAxis = d3.axisLeft(yScale).ticks(3).tickFormat(function(e){ return makek(e)});
 
     thisagg.append('g').attr('class', 'axis')
@@ -442,6 +440,12 @@ function showAgg(){
             .style("stroke-width", 2)
             .style("fill", "orange")
             .style("opacity", .2)
+            .on("mouseenter", function(d){
+                tip.show(d);
+            })
+            .on("mouseleave", function(d){
+                tip.hide(d);
+            })
 
     thisagg.selectAll(".pathtext")
         .data(by_month)
@@ -451,7 +455,7 @@ function showAgg(){
             .attr("x", function(d) { return xScale(new Date(d.key))})
             .attr("y", function(d) { return yScale(d.value.total_raised) - 10})
             .style("font-size", 8)
-            .style("font-weight", 700)
+            .style("font-weight", 7002)
             .style("opacity", .2)
             .style("text-anchor", "middle")
             .text(function(d){
@@ -491,6 +495,12 @@ function showAgg(){
             .style("stroke", "orange")
             .style("stroke-width", 2)
             .style("fill", "white")
+            .on("mouseenter", function(d){
+                tip.show(d);
+            })
+            .on("mouseleave", function(d){
+                tip.hide(d);
+            })
 
     d3.selectAll(".aggs").on("click", function(){
         thisagg.selectAll(".ce")
