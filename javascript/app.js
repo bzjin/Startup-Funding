@@ -217,7 +217,10 @@ function showBars() {
             .attr('class', 'd3-tip')
             .offset([0, 10])
             .html(function(d) {
-              return d.value;
+                if (!isNaN(d.offered_for_sale)) {
+                    d.offered_for_sale = "$" + f(d.offered_for_sale);
+                }
+              return "<b>" + d.name + "</b><br>Money Raised: $" + f(d.money_raised) + "<br>Minimum Investment: $" + f(d.min_investment) + "<br>For Sale: " + d.offered_for_sale;
             })
 
         thisindustry.call(tip);
@@ -248,7 +251,7 @@ function showBars() {
 
         var rScale = d3.scaleLinear()
                     .domain([0, d3.max(findmax)])
-                    .range([1, 3])
+                    .range([1, 5])
 
         var valueline = d3.area()
            // .curve(d3.curveBasis)
@@ -291,6 +294,16 @@ function showBars() {
                 .attr("fill", "white")
                 .attr("stroke", function(d){ return redgreen(d3.max(findmax))})
                 .attr("stroke-width", 1)
+                .on("mouseenter", function(d){
+                    tip.show(d);
+                    d3.select(this)
+                        .style("stroke-width", 3)
+                })
+                .on("mouseleave", function(d){
+                    tip.hide(d);
+                    d3.select(this)
+                        .style("stroke-width", 1)
+                })
 
         thisindustry.selectAll(".industrynames")
             .data(industry.values)
