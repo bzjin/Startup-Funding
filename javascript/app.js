@@ -20,8 +20,6 @@ d3.queue()
     .defer(d3.json, "data/us.geojson")
     .defer(d3.csv, "data/statedata.csv")
     .awaitAll(function(error, results){ 
-        var flare = { "name": "flare", "children": []};
-
         data = results[0];
         by_state = d3.nest()
         .key(function(d) { return d.state; })
@@ -29,6 +27,13 @@ d3.queue()
 
         by_industry = d3.nest()
         .key(function(d) { return d.industry})
+        .entries(data);
+
+        var monthsort = d3.timeFormat("%b %Y");
+        
+        by_month = d3.nest()
+        .key(function(d) { return monthsort(new Date(d.created_at))})
+        .rollup(function(leaves) { return {"number": leaves.length, "total_raised": d3.sum(leaves, function(d) {return parseFloat(d.money_raised);})} })
         .entries(data);
 
         by_industry.sort(function(a, b){
@@ -82,6 +87,7 @@ d3.queue()
 
         showMap();
         showBars("Agriculture");
+        showAgg();
 
         d3.selectAll(".button").on("click", function(){
             d3.selectAll(".floatme").remove();
@@ -271,7 +277,7 @@ function showBars(thisname) {
                 .range(["#a50026","#d73027","#f46d43","#fdae61","#a6d96a","#66bd63","#1a9850","#006837"]);
     
         var xScale = d3.scaleLinear()
-                    .domain([new Date(2015, 5, 1), new Date()])
+                    .domain([new Date(2015, 4, 1), new Date()])
                     .range([40, w - 40])
 
         var yScale = d3.scaleLinear()
@@ -351,6 +357,148 @@ function showBars(thisname) {
     }
     })
 
+}
+
+function showAgg(){
+     var thisagg = d3.select("#aggregate").append("svg")
+            .attr('width', w)
+            .attr('height', 400)
+            .style("overflow", "visible")
+
+     var tip = d3.tip()
+        .attr('class', 'd3-tip')
+        .offset([0, 10])
+        .html(function(d) {
+            if (!isNaN(d.offered_for_sale)) {
+                d.offered_for_sale = "$" + f(d.offered_for_sale);
+            }
+          return "<b>" + d.name + "</b><br>Money Raised: $" + f(d.money_raised) + "<br>Minimum Investment: $" + f(d.min_investment) + "<br>For Sale: " + d.offered_for_sale;
+        })
+
+    thisagg.call(tip);
+
+    var findmax_raised = [];
+    var findmax_number = [];
+    by_month.forEach(function(d){
+        findmax_raised.push(d.value.total_raised);
+        findmax_number.push(d.value.number)
+    })
+
+    var xScale = d3.scaleLinear()
+                    .domain([new Date(2015, 3, 1), new Date()])
+                    .range([40, w - 40])
+
+    var yScale = d3.scaleLinear()
+                .domain([0, d3.max(findmax_raised)])
+                .range([350, 30])
+
+    var yScaleC = d3.scaleLinear()
+                .domain([0, d3.max(findmax_number)])
+                .range([350, 30])
+
+    var valueline = d3.area()
+       // .curve(d3.curveBasis)
+        .x(function(d) { return xScale(new Date(d.key)); })
+        .y1(function(d) { return yScale(d.value.total_raised); })
+        .y0(function(d) { return yScale(0); });
+
+     var valuelineC = d3.line()
+       // .curve(d3.curveBasis)
+        .x(function(d) { return xScale(new Date(d.key)); })
+        .y(function(d) { return yScaleC(d.value.number); })
+
+    var makek = d3.format(".1s");
+    var month = d3.timeFormat("%b %Y")
+    var xAxis = d3.axisBottom(xScale).tickValues([new Date('June 2015'), new Date('April 2017')]).tickFormat(function(e){ return month(e)});
+    var yAxis = d3.axisLeft(yScale).ticks(3).tickFormat(function(e){ return makek(e)});
+
+    thisagg.append('g').attr('class', 'axis')
+        .attr('transform', 'translate(0, 350)')
+        .call(xAxis)
+            .selectAll('text')
+            .style("font-size", 10)
+            .style("fill", "black")
+
+    thisagg.append('g').attr('class', 'axis')
+        .attr('transform', 'translate(40, 0)')
+        .call(yAxis);
+
+    thisagg.append("path")
+        .datum(by_month)
+        .attr("class", "totalmoney ce")
+        .style("fill", "orange")
+        .style("opacity", .2)
+        .attr("d", valueline)
+
+    thisagg.selectAll(".pathcircle")
+        .data(by_month)
+        .enter()
+            .append("circle")
+            .attr("class", "totalmoney ce")
+            .attr("cx", function(d) { return xScale(new Date(d.key))})
+            .attr("cy", function(d) { return yScale(d.value.total_raised)})
+            .attr("r", 5)
+            .style("stroke", "white")
+            .style("stroke-width", 2)
+            .style("fill", "orange")
+            .style("opacity", .2)
+
+    thisagg.selectAll(".pathtext")
+        .data(by_month)
+        .enter()
+            .append("text")
+            .attr("class", "totalmoney ce")
+            .attr("x", function(d) { return xScale(new Date(d.key))})
+            .attr("y", function(d) { return yScale(d.value.total_raised) - 10})
+            .style("font-size", 8)
+            .style("font-weight", 700)
+            .style("opacity", .2)
+            .style("text-anchor", "middle")
+            .text(function(d){
+                return "$" + f(d.value.total_raised)
+            })
+
+    thisagg.append("path")
+        .datum(by_month)
+        .attr("class", "totalnum ce")
+        .style("fill", "none")
+        .style("stroke-width", 2)
+        .style("stroke", "orange")
+        .style("opacity", 1)
+        .attr("d", valuelineC)
+
+    thisagg.selectAll(".pathnum")
+        .data(by_month)
+        .enter()
+            .append("text")
+            .attr("class", "totalnum ce")
+            .attr("x", function(d) { return xScale(new Date(d.key))})
+            .attr("y", function(d) { return yScaleC(d.value.number) - 10})
+            .style("font-size", 8)
+            .style("font-weight", 700)
+            .style("text-anchor", "middle")
+            .text(function(d){
+                return f(d.value.number) })
+
+    thisagg.selectAll(".pathcirc")
+        .data(by_month)
+        .enter()
+            .append("circle")
+            .attr("class", "totalnum ce")
+            .attr("cx", function(d) { return xScale(new Date(d.key))})
+            .attr("cy", function(d) { return yScaleC(d.value.number)})
+            .attr("r", 5)
+            .style("stroke", "orange")
+            .style("stroke-width", 2)
+            .style("fill", "white")
+
+    d3.selectAll(".aggs").on("click", function(){
+        thisagg.selectAll(".ce")
+            .style("opacity", .2)
+
+        d3.selectAll("." + this.getAttribute("id"))
+            .style("opacity", 1)
+    })
 }
 
 function wrapt(text, width) {
