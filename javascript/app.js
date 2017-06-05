@@ -17,7 +17,7 @@ var color = d3.scaleQuantile()
 
 d3.queue()
     .defer(d3.csv, "data/raw.csv")
-    .defer(d3.json, "data/us.geojson")
+    .defer(d3.json, "data/us.topojson")
     .defer(d3.csv, "data/statedata.csv")
     .awaitAll(function(error, results){ 
         data = results[0];
@@ -60,10 +60,10 @@ d3.queue()
                                        } })
         .entries(data);
 
-        states = results[1];
+        states = topojson.feature(results[1], results[1].objects.us).features;
         statedata = results[2];
 
-        states.features.forEach(function(d){
+        states.forEach(function(d){
             statedata.forEach(function(j){
                 if (d.properties.name == j.STNAME){
                     //d.count = j.values.length;
@@ -77,7 +77,7 @@ d3.queue()
               })
         })
 
-        states.features.forEach(function(d){
+        states.forEach(function(d){
             by_state.forEach(function(j){
                 if (d.properties.name.toUpperCase() == j.key){
                     d.count = j.values.length;
@@ -156,7 +156,7 @@ function showMap() {
 
     pathGenerator = d3.geoPath().projection(projection);
     
-    var paths = svg.selectAll("path.state").data(states.features);
+    var paths = svg.selectAll("path.state").data(states);
     svg.call(tip); 
 
     paths.enter()
@@ -201,7 +201,7 @@ function showMap() {
     var yAxis = d3.axisLeft(yScale);
 
     svgs.selectAll(".states")
-        .data(states.features)
+        .data(states)
         .enter()
         .append("rect")
             .attr("id", function(d) { return d.properties.name})
@@ -226,7 +226,7 @@ function showMap() {
         })
 
     svgs.selectAll(".abbrev")
-        .data(states.features)
+        .data(states)
         .enter()
         .append("text")
             .attr("x", function(d){ return xScale(d.properties.name) + 5})
