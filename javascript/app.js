@@ -11,9 +11,9 @@ var svgs = d3.select("#states").append("svg")
     .attr("width", w)
     .attr("height", 200);
 
-var color = d3.scaleQuantize()
-            .domain([0, 1000])
-            .range(["#d9f0a3","#addd8e","#78c679","#41ab5d","#238443","#006837","#004529"])
+var color = d3.scaleQuantile()
+            .domain([0, 26, 76, 105, 151, 251, 600, 1000])
+            .range(["#ffffcc","#ffeda0","#fed976","#feb24c","#fd8d3c","#fc4e2a","#e31a1c","#bd0026","#800026"])
 
 d3.queue()
     .defer(d3.csv, "data/raw.csv")
@@ -86,8 +86,8 @@ d3.queue()
         })
 
         showMap();
-        showBars("Agriculture");
-        showAgg();
+        showBars("Technology");
+        //showAgg();
 
         d3.selectAll(".button").on("click", function(){
             d3.selectAll(".floatme").remove();
@@ -108,17 +108,20 @@ function showMap() {
     svg.append("text")
         .attr("x", 10)
         .attr("y", 140)
-        .style("fill", "white")
+        .style("font-weight", 700)
+        .style("fill", "#C43E3B")
         .style("font-size", 12)
         .text("Dollars Raised per Person")
+        .call(wrapt, 100)
 
-    for (i=0; i<7; i++){
+    var val = [0, 26, 76, 105, 151, 251, 600, 1000].reverse();
+    for (i=0; i<8; i++){
         svg.append("rect")
             .attr("x", 10)
             .attr("y", 130 + ((i+2)*20))
             .attr("width", 20)
             .attr("height", 20)
-            .attr("fill", color(i*160))
+            .attr("fill", color(val[i] + 1))
 
         svg.append("text")
             .attr("x", 35)
@@ -126,10 +129,10 @@ function showMap() {
             .style("fill", "black")
             .style("font-size", 12)
             .text(function(){
-                if (i != 6) {
-                    return "> $" + i*160 + "-$" + (i+1)*160;
-                }else if (i == 6){
-                    return "> $" + i*160
+                if (i != 0) {
+                    return "$" + val[i] + "-$" + (val[i-1]-1);
+                }else if (i == 0){
+                    return "> $" + val[i]
                 }
             })
     }
@@ -138,7 +141,7 @@ function showMap() {
     .attr('class', 'd3-tip')
     .offset([0, 10])
     .html(function(d) {
-      return "<h4 style='color:#76EE00'>" + d.properties.name +"</h4><p>Money Raised: $" + f(d.raised) + "<br> Minimum Investment: $" + f(d.min_invest) + "<br> For Sale: $" + f(d.for_sale) + "<br>Money Raised per Person: $" + parseInt(d.raised/d.population) + "</p>";
+      return "<h4 style='color:#C43E3B'>" + d.properties.name +"</h4><p>Money Raised: $" + f(d.raised) + "<br> Minimum Investment: $" + f(d.min_invest) + "<br> For Sale: $" + f(d.for_sale) + "<br>Money Raised per Person: $" + parseInt(d.raised/d.population) + "</p>";
     })
 
 
@@ -170,7 +173,7 @@ function showMap() {
         .on("mouseenter", function(d){
             tip.show(d);
             d3.selectAll("#" + d3.select(this).attr("id"))
-                .style("stroke", "#76EE00")
+                .style("stroke", "black")
                 .style("stroke-width", 2)
         })
         .on("mouseleave", function(d){
@@ -184,11 +187,13 @@ function showMap() {
                 .domain(state_names)
                 .range([50, w - 50])
 
-    var yScale = d3.scaleLinear()
+    var yScale = d3.scalePow()
+                .exponent(.5)
                 .domain([0, d3.max(findmax)])
                 .range([180, 10])
 
-    var yScaleH = d3.scaleLinear()
+    var yScaleH = d3.scalePow()
+                .exponent(.5)
                 .domain([0, d3.max(findmax)])
                 .range([0, 170])
 
@@ -210,7 +215,7 @@ function showMap() {
             .on("mouseenter", function(d){
             tip.show(d);
             d3.selectAll("#" + d3.select(this).attr("id"))
-                .style("stroke", "#76EE00")
+                .style("stroke", "black")
                 .style("stroke-width", 2)
         })
         .on("mouseleave", function(d){
@@ -258,12 +263,17 @@ function showBars(thisname) {
             .attr("y", 20)
             .text(industry.key)
             .style("font-weight", 700)
-            .style("fill", "green")
+            .style("font-size", 18)
+            .style("text-transform", "uppercase")
+            .style("fill", "#C43E3B")
 
         thisindustry.append("text")
-            .attr("x", -180)
+            .attr("x", -175)
             .attr("y", 0)
             .text("Money Raised")
+            .style("text-transform", "uppercase")
+            .style("text-anchor", "middle")
+            .style("fill", "#C43E3B")
             .style("font-weight", 700)
             .attr("transform", "rotate(-90)")
 
@@ -278,11 +288,11 @@ function showBars(thisname) {
     
         var xScale = d3.scaleLinear()
                     .domain([new Date(2015, 4, 1), new Date()])
-                    .range([40, w - 40])
+                    .range([50, w - 40])
 
         var yScale = d3.scaleLinear()
                     .domain([0, d3.max(findmax)])
-                    .range([280, 30])
+                    .range([300, 40])
 
         var rScale = d3.scaleLinear()
                     .domain([0, d3.max(findmax)])
@@ -296,18 +306,15 @@ function showBars(thisname) {
 
         var makek = d3.format(".1s");
         var month = d3.timeFormat("%b %Y")
-        var xAxis = d3.axisBottom(xScale).tickValues([new Date('June 2015'), new Date('March 2017')]).tickFormat(function(e){ return month(e)});
+        var xAxis = d3.axisBottom(xScale).tickValues([new Date('June 2015'), new Date('April 2017')]).tickFormat(function(e){ return month(e)});
         var yAxis = d3.axisLeft(yScale).ticks(3).tickFormat(function(e){ return makek(e)});
 
         thisindustry.append('g').attr('class', 'axis')
-            .attr('transform', 'translate(0, 280)')
+            .attr('transform', 'translate(0, 300)')
             .call(xAxis)
-                .selectAll('text')
-                .style("font-size", 10)
-                .style("fill", "black")
 
         thisindustry.append('g').attr('class', 'axis')
-            .attr('transform', 'translate(40, 0)')
+            .attr('transform', 'translate(50, 0)')
             .call(yAxis);
 
         thisindustry.append("path")
@@ -352,13 +359,13 @@ function showBars(thisname) {
                         return d.name;
                     }})
                 .style("fill", "black")
-                .style("font-size", 10)
-                .call(wrapt, 90)
+                .style("font-size", 12)
+                .call(wrapt, 150)
     }
     })
 
 }
-
+/*
 function showAgg(){
      var thisagg = d3.select("#aggregate").append("svg")
             .attr('width', w)
@@ -509,7 +516,7 @@ function showAgg(){
         d3.selectAll("." + this.getAttribute("id"))
             .style("opacity", 1)
     })
-}
+}*/
 
 function wrapt(text, width) {
     text.each(function () {
