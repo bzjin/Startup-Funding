@@ -44,21 +44,15 @@ d3.queue()
             else {return 0}
         })
 
-        by_industry.forEach(function(d){
+        var names = ["Technology", "Biotechnology", "Computers", "Environmental Services", "Energy Conservation", "Pharmaceuticals", "Telecommunications", "Business Services", "Health Insurance", "Hospitals and Physicians", "Tourism and Travel Services", "Lodging and Conventions", "Agriculture", "Airlines and Airports", "Coal Mining", "Construction", "Electric Utilities", "Manufacturing", "Residential", "Restaurants", "Retailing", "Other Energy", "Other Travel", "Other"]
+        
+        for (d=0; d<names.length; d++){
             var button = document.createElement("button");
-                button.innerHTML = d.key;
-                button.setAttribute('id', "b" + (by_industry.indexOf(d) + 1)); 
-                button.setAttribute('class', "button"); 
-                document.getElementById('buttons').appendChild(button);
-        })
-
-        by_state_total = d3.nest()
-        .key(function(d) { return d.state})
-        .rollup(function(leaves) { return {"money_raised": d3.sum(leaves, function(d) {return parseFloat(d.money_raised);}),
-                                           "min_investment": d3.sum(leaves, function(d) {return parseFloat(d.min_investment);}),
-                                           "offered_for_sale": d3.sum(leaves, function(d) {return parseFloat(d.offered_for_sale);})
-                                       } })
-        .entries(data);
+            button.innerHTML = names[d];
+            button.setAttribute('id', "b" + d + 1); 
+            button.setAttribute('class', "button"); 
+            document.getElementById('buttons').appendChild(button);
+        }
 
         states = topojson.feature(results[1], results[1].objects.us).features;
         statedata = results[2];
@@ -197,9 +191,6 @@ function showMap() {
                 .domain([0, d3.max(findmax)])
                 .range([0, 170])
 
-    var xAxis = d3.axisBottom(xScale).tickSize(0,0,0)
-    var yAxis = d3.axisLeft(yScale);
-
     svgs.selectAll(".states")
         .data(states)
         .enter()
@@ -290,7 +281,8 @@ function showBars(thisname) {
                     .domain([new Date(2015, 4, 1), new Date()])
                     .range([50, w - 40])
 
-        var yScale = d3.scaleLinear()
+        var yScale = d3.scalePow()
+                    .exponent(.5)
                     .domain([0, d3.max(findmax)])
                     .range([300, 40])
 
@@ -319,10 +311,10 @@ function showBars(thisname) {
 
         thisindustry.append("path")
             .datum(industry.values)
-            .style("fill", redgreen(d3.max(findmax)))
-            .style("stroke", redgreen(d3.max(findmax)))
+            .style("fill", color(d3.max(findmax)))
+            .style("stroke", color(d3.max(findmax)))
             .style("opacity", .5)
-            .style("stroke-width", 3)
+            //.style("stroke-width", 3)
             .attr("d", valueline)
 
         thisindustry.selectAll(".industry")
@@ -334,7 +326,7 @@ function showBars(thisname) {
                 .attr("cy", function(d){ return yScale(d.money_raised)})
                 .attr("r", function(d){ return rScale(d.money_raised)})
                 .attr("fill", "white")
-                .attr("stroke", function(d){ return redgreen(d3.max(findmax))})
+                .attr("stroke", function(d){ return color(d3.max(findmax))})
                 .attr("stroke-width", 1)
                 .on("mouseenter", function(d){
                     tip.show(d);
