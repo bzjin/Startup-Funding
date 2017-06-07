@@ -13,7 +13,7 @@ var svgs = d3.select("#states").append("svg")
 
 var color = d3.scaleQuantile()
             .domain([0, 26, 76, 105, 151, 251, 600, 1000])
-            .range(["#ffffcc","#ffeda0","#fed976","#feb24c","#fd8d3c","#fc4e2a","#e31a1c","#bd0026","#800026"])
+            .range(["#f7fcb9","#d9f0a3","#addd8e","#78c679","#41ab5d","#238443","#006837","#004529"])
 
 d3.queue()
     .defer(d3.csv, "data/raw.csv")
@@ -29,6 +29,7 @@ d3.queue()
         .key(function(d) { return d.industry})
         .entries(data);
 
+        console.log(JSON.stringify(by_industry));
         var monthsort = d3.timeFormat("%b %Y");
         
         by_month = d3.nest()
@@ -103,7 +104,7 @@ function showMap() {
         .attr("x", 10)
         .attr("y", 140)
         .style("font-weight", 700)
-        .style("fill", "#C43E3B")
+        .style("fill", "#41ab5d")
         .style("font-size", 12)
         .text("Dollars Raised per Person")
         .call(wrapt, 100)
@@ -135,7 +136,7 @@ function showMap() {
     .attr('class', 'd3-tip')
     .offset([0, 10])
     .html(function(d) {
-      return "<h4 style='color:#C43E3B'>" + d.properties.name +"</h4><p>Money Raised: $" + f(d.raised) + "<br> Minimum Investment: $" + f(d.min_invest) + "<br> For Sale: $" + f(d.for_sale) + "<br>Money Raised per Person: $" + parseInt(d.raised/d.population) + "</p>";
+      return "<h4 style='color:#41ab5d'>" + d.properties.name +"</h4><p>Money Raised: $" + f(d.raised) + "<br> For Sale: $" + f(d.for_sale) + "<br>Money Raised per Person: $" + parseInt(d.raised/d.population) + "</p>";
     })
 
 
@@ -244,7 +245,7 @@ function showBars(thisname) {
                 if (!isNaN(d.offered_for_sale)) {
                     d.offered_for_sale = "$" + f(d.offered_for_sale);
                 }
-              return "<b>" + d.name + "</b><br>Money Raised: $" + f(d.money_raised) + "<br>Minimum Investment: $" + f(d.min_investment) + "<br>For Sale: " + d.offered_for_sale;
+              return "<b>" + d.name + "</b><br>Money Raised: $" + f(d.money_raised) + "<br>For Sale: " + d.offered_for_sale;
             })
 
         thisindustry.call(tip);
@@ -256,7 +257,7 @@ function showBars(thisname) {
             .style("font-weight", 700)
             .style("font-size", 18)
             .style("text-transform", "uppercase")
-            .style("fill", "#C43E3B")
+            .style("fill", "#41ab5d")
 
         thisindustry.append("text")
             .attr("x", -175)
@@ -264,7 +265,7 @@ function showBars(thisname) {
             .text("Money Raised")
             .style("text-transform", "uppercase")
             .style("text-anchor", "middle")
-            .style("fill", "#C43E3B")
+            .style("fill", "#41ab5d")
             .style("font-weight", 700)
             .attr("transform", "rotate(-90)")
 

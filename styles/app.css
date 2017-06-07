@@ -76,7 +76,7 @@ button {
 .axis text {
   font-size: 12px;
   font-weight: 700;
-  fill: #C43E3B;
+  fill: #41ab5d;
 }
 
 .d3-tip {
@@ -90,7 +90,7 @@ button {
 }
 
 .orange {
-  color: orange;
+  color: #41ab5d;
 }
 
 .blue {
@@ -134,7 +134,7 @@ button {
 }
 
 button:hover {
-  background-color: orange;
+  background-color: #41ab5d;
 }
 
 #industries {
