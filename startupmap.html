@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html>
+
+<head lang="en">
+  <meta charset="utf-8">
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.7.1/d3-tip.min.js"></script>
+  <script src="https://unpkg.com/topojson@3"></script>
+  <script
+  src="https://code.jquery.com/jquery-3.2.1.min.js"
+  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+  crossorigin="anonymous"></script>
+  <style>
+    .d3-tip {
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  font-weight: 100;
+  font-size: 12px;
+  border-radius: 2px;
+  z-index: 999;
+}
+  </style>
+</head>
+
+
+<body>
+    <div id = "map"></div>
+    <div id = "states"></div>
+  
+<script>
+  
+  var f = d3.format(",");
+var projection = d3.geoAlbersUsa().scale(1000).translate([500,260]);
+var pathGenerator = d3.geoPath().projection(projection);
+var w = $("#map").width(); 
+
+var svg = d3.select("#map").append("svg")
+    .attr("width", w)
+    .attr("height", 500);
+
+var svgs = d3.select("#states").append("svg")
+    .attr("width", w)
+    .attr("height", 200);
+
+var color = d3.scaleQuantile()
+            .domain([0, 26, 76, 105, 151, 251, 600, 1000])
+            .range(["#f7fcb9","#d9f0a3","#addd8e","#78c679","#41ab5d","#238443","#006837","#004529"])
+
+d3.queue()
+    .defer(d3.csv, "data/raw.csv")
+    .defer(d3.json, "data/us.topojson")
+    .defer(d3.csv, "data/statedata.csv")
+    .awaitAll(function(error, results){ 
+        data = results[0];
+        by_state = d3.nest()
+        .key(function(d) { return d.state; })
+        .entries(data);
+
+        by_industry = d3.nest()
+        .key(function(d) { return d.industry})
+        .entries(data);
+
+        console.log(JSON.stringify(by_industry));
+        var monthsort = d3.timeFormat("%b %Y");
+        
+        by_month = d3.nest()
+        .key(function(d) { return monthsort(new Date(d.created_at))})
+        .rollup(function(leaves) { return {"number": leaves.length, "total_raised": d3.sum(leaves, function(d) {return parseFloat(d.money_raised);})} })
+        .entries(data);
+
+        by_industry.sort(function(a, b){
+            var a1 = a.key;
+            var b1 = b.key;
+            if (a.key > b.key) { return 1}
+            else if (a.key < b.key) { return -1}
+            else {return 0}
+        })
+
+     
+
+        states = topojson.feature(results[1], results[1].objects.us).features;
+        statedata = results[2];
+
+        states.forEach(function(d){
+            statedata.forEach(function(j){
+                if (d.properties.name == j.STNAME){
+                    //d.count = j.values.length;
+                    d.population = j.POPULATION;
+                    d.raised = j.RAISED;
+                    d.min_invest = j.MIN_INVESTMENT;
+                    d.for_sale = j.FOR_SALE;
+                    d.area = j.AREA;
+                    d.abbrev = j.ABBREV;
+                }
+              })
+        })
+
+        states.forEach(function(d){
+            by_state.forEach(function(j){
+                if (d.properties.name.toUpperCase() == j.key){
+                    d.count = j.values.length;
+                    }                
+              })
+        })
+
+        showMap();
+
+        d3.selectAll(".button").on("click", function(){
+            d3.selectAll(".floatme").remove();
+            showBars(this.innerText)
+        })
+})
+
+
+function showMap() {
+    statedata.sort(function(a, b){
+        var nameA = a.RAISED/a.POPULATION;
+        var nameB = b.RAISED/b.POPULATION;
+        if (nameA < nameB) { return 1; }
+        if (nameA > nameB) { return -1; }
+        return 0; 
+    })
+
+    svg.append("text")
+        .attr("x", 10)
+        .attr("y", 140)
+        .style("font-weight", 700)
+        .style("fill", "#41ab5d")
+        .style("font-size", 12)
+        .text("Dollars Raised per Person")
+        .call(wrapt, 100)
+
+    var val = [0, 26, 76, 105, 151, 251, 600, 1000].reverse();
+    for (i=0; i<8; i++){
+        svg.append("rect")
+            .attr("x", 10)
+            .attr("y", 130 + ((i+2)*20))
+            .attr("width", 20)
+            .attr("height", 20)
+            .attr("fill", color(val[i] + 1))
+
+        svg.append("text")
+            .attr("x", 35)
+            .attr("y", 145 + ((i+2)*20))
+            .style("fill", "black")
+            .style("font-size", 12)
+            .text(function(){
+                if (i != 0) {
+                    return "$" + val[i] + "-$" + (val[i-1]-1);
+                }else if (i == 0){
+                    return "> $" + val[i]
+                }
+            })
+    }
+
+    var tip = d3.tip()
+    .attr('class', 'd3-tip')
+    .offset([0, 10])
+    .html(function(d) {
+      return "<h4 style='color:#41ab5d'>" + d.properties.name +"</h4><p>Money Raised: $" + f(d.raised) + "<br> For Sale: $" + f(d.for_sale) + "<br>Money Raised per Person: $" + parseInt(d.raised/d.population) + "</p>";
+    })
+
+
+    var state_names = [];
+    var findmax = [];
+    statedata.forEach(function(d){
+        if (state_names.indexOf(d.key) == -1){
+            state_names.push(d.STNAME);
+        }
+        findmax.push(d.RAISED/d.POPULATION);
+    })
+
+    pathGenerator = d3.geoPath().projection(projection);
+    
+    var paths = svg.selectAll("path.state").data(states);
+    svg.call(tip); 
+
+    paths.enter()
+      .append("path")
+      .attr("class", "state")
+        .attr("id", function(d) { return d.properties.name})
+      .attr("d", function (state) {
+          return pathGenerator(state);
+      })
+        .style("fill", function(d){
+            return color(d.raised/d.population)
+        })
+        .style("opacity", 1)
+        .on("mouseenter", function(d){
+            tip.show(d);
+            d3.selectAll("#" + d3.select(this).attr("id"))
+                .style("stroke", "black")
+                .style("stroke-width", 2)
+        })
+        .on("mouseleave", function(d){
+            tip.hide(d);
+            d3.selectAll("#" + d3.select(this).attr("id"))
+                .style("stroke", "none")
+                .style("stroke-width", 0)
+        })
+
+    var xScale = d3.scalePoint()
+                .domain(state_names)
+                .range([50, w - 50])
+
+    var yScale = d3.scalePow()
+                .exponent(.5)
+                .domain([0, d3.max(findmax)])
+                .range([180, 10])
+
+    var yScaleH = d3.scalePow()
+                .exponent(.5)
+                .domain([0, d3.max(findmax)])
+                .range([0, 170])
+
+    svgs.selectAll(".states")
+        .data(states)
+        .enter()
+        .append("rect")
+            .attr("id", function(d) { return d.properties.name})
+            .attr("x", function(d){ return xScale(d.properties.name)})
+            .attr("y", function(d) { return yScale(d.raised/d.population)})
+            .attr("width", 10)
+            .attr("height", function(d) { return yScaleH(d.raised/d.population)})
+            .style("fill", function(d){
+            return color(d.raised/d.population)
+        })
+            .on("mouseenter", function(d){
+            tip.show(d);
+            d3.selectAll("#" + d3.select(this).attr("id"))
+                .style("stroke", "black")
+                .style("stroke-width", 2)
+        })
+        .on("mouseleave", function(d){
+            tip.hide(d);
+            d3.selectAll("#" + d3.select(this).attr("id"))
+                .style("stroke", "none")
+                .style("stroke-width", 0)
+        })
+
+    svgs.selectAll(".abbrev")
+        .data(states)
+        .enter()
+        .append("text")
+            .attr("x", function(d){ return xScale(d.properties.name) + 5})
+            .attr("y", 192)
+            .style("text-anchor", "middle")
+            .style("font-size", 10)
+            .style("fill", "black")
+            .text(function(d) {return d.abbrev})
+}
+
+  
+function wrapt(text, width) {
+    text.each(function () {
+        var text = d3.select(this),
+            words = text.text().split(/\s+/).reverse(),
+            word,
+            line = [],
+            lineNumber = 0,
+            lineHeight = 1.1, // ems
+            x = text.attr("x"),
+            y = text.attr("y"),
+            dy = 0, //parseFloat(text.attr("dy")),
+            tspan = text.text(null)
+                        .append("tspan")
+                        .attr("x", x)
+                        .attr("y", y)
+                        .attr("dy", dy + "em");
+        while (word = words.pop()) {
+            line.push(word);
+            tspan.text(line.join(" "));
+            if (tspan.node().getComputedTextLength() > width) {
+                line.pop();
+                tspan.text(line.join(" "));
+                line = [word];
+                tspan = text.append("tspan")
+                            .attr("x", x)
+                            .attr("y", y)
+                            .attr("dy", ++lineNumber * lineHeight + dy + "em")
+                            .text(word);
+            }
+        }
+    });
+}
+ </script>
+</body>
+
+</html>
+
