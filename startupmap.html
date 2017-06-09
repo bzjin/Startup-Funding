@@ -32,8 +32,7 @@
 <script>
   
   var f = d3.format(",");
-var projection = d3.geoAlbersUsa().scale(1000).translate([500,260]);
-var pathGenerator = d3.geoPath().projection(projection);
+
 var w = $("#map").width(); 
 
 var svg = d3.select("#map").append("svg")
@@ -42,7 +41,7 @@ var svg = d3.select("#map").append("svg")
 
 var svgs = d3.select("#states").append("svg")
     .attr("width", w)
-    .attr("height", 300);
+    .attr("height", 280);
 
 var color = d3.scaleQuantile()
             .domain([0, 26, 76, 105, 151, 251, 600, 1000])
@@ -62,7 +61,6 @@ d3.queue()
         .key(function(d) { return d.industry})
         .entries(data);
 
-        console.log(JSON.stringify(by_industry));
         var monthsort = d3.timeFormat("%b %Y");
         
         by_month = d3.nest()
@@ -115,6 +113,13 @@ d3.queue()
 
 
 function showMap() {
+    if (w > 900) {
+        var projection = d3.geoAlbersUsa().scale(1000).translate([500,260]);
+        var pathGenerator = d3.geoPath().projection(projection);
+    } else {
+        var projection = d3.geoAlbersUsa().scale(700).translate([400,260]);
+        var pathGenerator = d3.geoPath().projection(projection);
+    }
     statedata.sort(function(a, b){
         var nameA = a.RAISED/a.POPULATION;
         var nameB = b.RAISED/b.POPULATION;
@@ -213,7 +218,12 @@ function showMap() {
       var yScale = d3.scalePow()
                 .exponent(.5)
                 .domain([0, d3.max(findmax)])
-                .range([180, 10])
+                .range([170, 0])
+
+     var yScale2 = d3.scalePow()
+                .exponent(.5)
+                .domain([0, d3.max(findmax)])
+                .range([250, 80])
 
       var yH = d3.scalePow()
                 .exponent(.5)
@@ -225,15 +235,20 @@ function showMap() {
         .enter()
         .append("rect")
             .attr("id", function(d) { return d.properties.name})
-            .attr("x", function(d){ return xScale(d.properties.name)})
-            .attr("y", function(d) { return 
-              if (d.properties.name < "M") {
+            .attr("x", function(d){ 
+                if (state_names.indexOf(d.properties.name) < 25) {
+                    return x1(d.properties.name)
+                } else {
+                    return x2(d.properties.name)
+                }})
+            .attr("y", function(d) {  
+              if (state_names.indexOf(d.properties.name) < 25) {
                 return yScale(d.raised/d.population)
               }else {
-                return yScale(d.raised/d.population - 100)
+                return yScale2(d.raised/d.population)
               }})
             .attr("width", 10)
-            .attr("height", function(d) { return yScaleH(d.raised/d.population)})
+            .attr("height", function(d) { return yH(d.raised/d.population)})
             .style("fill", function(d){
             return color(d.raised/d.population)
         })
@@ -254,12 +269,17 @@ function showMap() {
         .data(states)
         .enter()
         .append("text")
-            .attr("x", function(d){ return xScale(d.properties.name) + 5})
-            .attr("y", function(d) { return 
-              if (d.properties.name < "M") {
-                  return 192;
+             .attr("x", function(d){ 
+                if (state_names.indexOf(d.properties.name) < 25) {
+                    return x1(d.properties.name) + 5
+                } else {
+                    return x2(d.properties.name) + 5
+                }})
+             .attr("y", function(d) {  
+              if (state_names.indexOf(d.properties.name) < 25) {
+                return 180
               }else {
-                return 292
+                return 260
               }})
             .style("text-anchor", "middle")
             .style("font-size", 10)
