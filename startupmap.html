@@ -42,7 +42,7 @@ var svg = d3.select("#map").append("svg")
 
 var svgs = d3.select("#states").append("svg")
     .attr("width", w)
-    .attr("height", 200);
+    .attr("height", 300);
 
 var color = d3.scaleQuantile()
             .domain([0, 26, 76, 105, 151, 251, 600, 1000])
@@ -191,7 +191,7 @@ function showMap() {
         .on("mouseenter", function(d){
             tip.show(d);
             d3.selectAll("#" + d3.select(this).attr("id"))
-                .style("stroke", "black")
+                .style("stroke", "#39FF14")
                 .style("stroke-width", 2)
         })
         .on("mouseleave", function(d){
@@ -201,21 +201,87 @@ function showMap() {
                 .style("stroke-width", 0)
         })
 
-    var xScale = d3.scalePoint()
-                .domain(state_names)
+    if (w < 900) {
+      var x1 = d3.scalePoint()
+                .domain(state_names.slice(0,25))
                 .range([50, w - 50])
 
-    var yScale = d3.scalePow()
+      var x2 = d3.scalePoint()
+                .domain(state_names.slice(25,51))
+                .range([50, w - 50])
+
+      var yScale = d3.scalePow()
                 .exponent(.5)
                 .domain([0, d3.max(findmax)])
                 .range([180, 10])
 
-    var yScaleH = d3.scalePow()
+      var yH = d3.scalePow()
                 .exponent(.5)
                 .domain([0, d3.max(findmax)])
                 .range([0, 170])
 
-    svgs.selectAll(".states")
+      svgs.selectAll(".states")
+        .data(states)
+        .enter()
+        .append("rect")
+            .attr("id", function(d) { return d.properties.name})
+            .attr("x", function(d){ return xScale(d.properties.name)})
+            .attr("y", function(d) { return 
+              if (d.properties.name < "M") {
+                return yScale(d.raised/d.population)
+              }else {
+                return yScale(d.raised/d.population - 100)
+              }})
+            .attr("width", 10)
+            .attr("height", function(d) { return yScaleH(d.raised/d.population)})
+            .style("fill", function(d){
+            return color(d.raised/d.population)
+        })
+            .on("mouseenter", function(d){
+            tip.show(d);
+            d3.selectAll("#" + d3.select(this).attr("id"))
+                .style("stroke", "#39FF14")
+                .style("stroke-width", 2)
+        })
+        .on("mouseleave", function(d){
+            tip.hide(d);
+            d3.selectAll("#" + d3.select(this).attr("id"))
+                .style("stroke", "none")
+                .style("stroke-width", 0)
+        })
+
+     svgs.selectAll(".abbrev")
+        .data(states)
+        .enter()
+        .append("text")
+            .attr("x", function(d){ return xScale(d.properties.name) + 5})
+            .attr("y", function(d) { return 
+              if (d.properties.name < "M") {
+                  return 192;
+              }else {
+                return 292
+              }})
+            .style("text-anchor", "middle")
+            .style("font-size", 10)
+            .style("fill", "black")
+            .text(function(d) {return d.abbrev})
+    } else {
+
+      var xScale = d3.scalePoint()
+                .domain(state_names)
+                .range([50, w - 50])
+
+      var yScale = d3.scalePow()
+                .exponent(.5)
+                .domain([0, d3.max(findmax)])
+                .range([180, 10])
+
+      var yScaleH = d3.scalePow()
+                .exponent(.5)
+                .domain([0, d3.max(findmax)])
+                .range([0, 170])
+
+      svgs.selectAll(".states")
         .data(states)
         .enter()
         .append("rect")
@@ -230,7 +296,7 @@ function showMap() {
             .on("mouseenter", function(d){
             tip.show(d);
             d3.selectAll("#" + d3.select(this).attr("id"))
-                .style("stroke", "black")
+                .style("stroke", "#39FF14")
                 .style("stroke-width", 2)
         })
         .on("mouseleave", function(d){
@@ -240,7 +306,7 @@ function showMap() {
                 .style("stroke-width", 0)
         })
 
-    svgs.selectAll(".abbrev")
+      svgs.selectAll(".abbrev")
         .data(states)
         .enter()
         .append("text")
@@ -250,6 +316,11 @@ function showMap() {
             .style("font-size", 10)
             .style("fill", "black")
             .text(function(d) {return d.abbrev})
+
+
+    }
+
+    
 }
 
   
