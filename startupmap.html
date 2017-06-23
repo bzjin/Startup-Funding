@@ -33,15 +33,17 @@
   
   var f = d3.format(",");
 
-var w = $("#map").width(); 
+var w = 700;
 
 var svg = d3.select("#map").append("svg")
     .attr("width", w)
-    .attr("height", 500);
+    .attr("height", 500)
+    .style("overflow", "visible")
 
 var svgs = d3.select("#states").append("svg")
     .attr("width", w)
-    .attr("height", 280);
+    .attr("height", 280)
+    .style("overflow", "visible")
 
 var color = d3.scaleQuantile()
             .domain([0, 26, 76, 105, 151, 251, 600, 1000])
@@ -114,10 +116,10 @@ d3.queue()
 
 function showMap() {
     if (w > 900) {
-        var projection = d3.geoAlbersUsa().scale(1000).translate([500,260]);
+        var projection = d3.geoAlbersUsa().scale(1000).translate([500,300]);
         var pathGenerator = d3.geoPath().projection(projection);
     } else {
-        var projection = d3.geoAlbersUsa().scale(700).translate([400,260]);
+        var projection = d3.geoAlbersUsa().scale(700).translate([400,300]);
         var pathGenerator = d3.geoPath().projection(projection);
     }
     statedata.sort(function(a, b){
